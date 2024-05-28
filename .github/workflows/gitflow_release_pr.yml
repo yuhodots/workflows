@@ -27,7 +27,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git checkout -b "release/${{ inputs.version }}"
           git pull origin "release/${{ inputs.version }}"
           git -c user.name='action-bot[bot]' -c user.email='action-bot[bot]@users.noreply.github.com' \
             commit -a -m "Update helm chart tag to ${{ inputs.version }}"
@@ -38,8 +37,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git fetch
-          git checkout -b develop
           git pull origin develop
           git -c user.name='action-bot[bot]' -c user.email='action-bot[bot]@users.noreply.github.com' \
             merge --no-ff "release/${{ inputs.version }}" -m "Merge release/${{ inputs.version }} to develop"

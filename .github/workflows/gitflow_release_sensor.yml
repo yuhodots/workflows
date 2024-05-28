@@ -43,7 +43,4 @@ jobs:
           VERSION: ${{ steps.image_version.outputs.version }}
         run: |
           echo "{\"current_version\": \"$VERSION\"}" | \
-          gh workflow run gitflow_release_pr \
-            --ref ${{ github.ref }} \
-            --repo ${{ github.repository }} \
-            --f version=$VERSION
+          gh workflow run gitflow_release_pr -f version=$VERSION

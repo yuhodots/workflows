@@ -1,0 +1,49 @@
+name: GitFlow Release Sensor
+on:
+  push:
+    branches:
+      - release/**
+
+jobs:
+  dummy-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Build Docker Image
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/release/"* ]]; then
+            VERSION=$(echo ${{ github.ref }} | cut -d'/' -f4)
+          else
+            VERSION=$(echo ${{ github.sha }} | cut -c1-8)
+          fi
+          echo VERSION=$VERSION
+          echo Complete dummy-app:tag=$VERSION docker image build
+
+  call-release-pr:
+    needs: dummy-build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/release/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: image_version
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/release/"* ]]; then
+            VERSION=$(echo ${{ github.ref }} | cut -d'/' -f4)
+          else
+            VERSION=$(echo ${{ github.sha }} | cut -c1-8)
+          fi
+          echo VERSION=$VERSION
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Call PR workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.image_version.outputs.version }}
+        run: |
+          echo "{\"current_version\": \"$VERSION\"}" | \
+          gh workflow run "GitFlow Release PR" \
+            --ref ${{ github.ref }} \
+            --repo ${{ github.repository }} \
+            --json

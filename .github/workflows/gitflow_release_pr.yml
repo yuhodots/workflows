@@ -1,0 +1,56 @@
+name: GitFlow Release PR
+on:
+  workflow_dispatch:
+    inputs:
+      current_version:
+        description: "Version number for the current release"
+        required: true
+        default: vX.Y.Z
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Update helm tag
+      - name: Update helm tag
+        uses: mikefarah/yq@master
+        env:
+          VERSION: "${{ inputs.VERSION }}"
+        with:
+          cmd: |
+            yq eval -i '.dummy-app.dummy-domain.tag = strenv(VERSION)' helm-chart/dummy-values.yaml
+
+      # Commit helm chart changes
+      - name: Commit helm chart changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git checkout -b "release/${{ inputs.VERSION }}"
+          git -c user.name='action-bot[bot]' -c user.email='action-bot[bot]@users.noreply.github.com' \
+            commit -a -m "Update helm chart tag to v${{ inputs.VERSION }}"
+          git push -u origin "release/${{ inputs.VERSION }}"
+
+      # Push changes to develop
+      - name: Merge to develop
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch
+          git checkout -b develop
+          git pull origin develop
+          git -c user.name='action-bot[bot]' -c user.email='action-bot[bot]@users.noreply.github.com' \
+            merge --no-ff "release/${{ inputs.VERSION }}" -m "Merge release/${{ inputs.VERSION }} to develop"
+          git push origin develop
+
+      # Create PR to main
+      - name: Create PR to main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git checkout "release/${{ inputs.VERSION }}"
+          gh pr create \
+            --base="main" \
+            --title="release ${{ inputs.VERSION }} to main" \
+            --body=""

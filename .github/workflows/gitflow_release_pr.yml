@@ -2,7 +2,7 @@ name: GitFlow Release PR
 on:
   workflow_dispatch:
     inputs:
-      current_version:
+      version:
         description: "Version number for the current release"
         required: true
         default: vX.Y.Z
@@ -17,7 +17,7 @@ jobs:
       - name: Update helm tag
         uses: mikefarah/yq@master
         env:
-          VERSION: "${{ inputs.VERSION }}"
+          VERSION: "${{ inputs.version }}"
         with:
           cmd: |
             yq eval -i '.dummy-app.dummy-domain.tag = strenv(VERSION)' helm-chart/dummy-values.yaml
@@ -27,10 +27,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git checkout -b "release/${{ inputs.VERSION }}"
+          git checkout -b "release/${{ inputs.version }}"
           git -c user.name='action-bot[bot]' -c user.email='action-bot[bot]@users.noreply.github.com' \
-            commit -a -m "Update helm chart tag to v${{ inputs.VERSION }}"
-          git push -u origin "release/${{ inputs.VERSION }}"
+            commit -a -m "Update helm chart tag to v${{ inputs.version }}"
+          git push -u origin "release/${{ inputs.version }}"
 
       # Push changes to develop
       - name: Merge to develop
@@ -41,7 +41,7 @@ jobs:
           git checkout -b develop
           git pull origin develop
           git -c user.name='action-bot[bot]' -c user.email='action-bot[bot]@users.noreply.github.com' \
-            merge --no-ff "release/${{ inputs.VERSION }}" -m "Merge release/${{ inputs.VERSION }} to develop"
+            merge --no-ff "release/${{ inputs.version }}" -m "Merge release/${{ inputs.version }} to develop"
           git push origin develop
 
       # Create PR to main
@@ -49,8 +49,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git checkout "release/${{ inputs.VERSION }}"
+          git checkout "release/${{ inputs.version }}"
           gh pr create \
             --base="main" \
-            --title="release ${{ inputs.VERSION }} to main" \
+            --title="release ${{ inputs.version }} to main" \
             --body=""

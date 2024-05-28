@@ -28,8 +28,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           git checkout -b "release/${{ inputs.version }}"
+          git pull origin "release/${{ inputs.version }}"
           git -c user.name='action-bot[bot]' -c user.email='action-bot[bot]@users.noreply.github.com' \
-            commit -a -m "Update helm chart tag to v${{ inputs.version }}"
+            commit -a -m "Update helm chart tag to ${{ inputs.version }}"
           git push -u origin "release/${{ inputs.version }}"
 
       # Push changes to develop

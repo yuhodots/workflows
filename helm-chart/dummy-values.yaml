@@ -1,0 +1,4 @@
+dummy-app:
+  dummy-domain:
+    image: 000000.dkr.ecr.ap-northeast-2.amazonaws.com/dummy
+    tag: v1.0.0
